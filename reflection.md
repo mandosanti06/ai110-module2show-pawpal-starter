@@ -4,8 +4,9 @@
 
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+- My initial UML design centered on three core user actions: entering owner and pet information, adding or editing pet care tasks, and generating a daily schedule that shows what should happen today.
+- I planned the classes so that one part of the system would store the pet and task data, another would handle the scheduling rules, and the Streamlit UI would collect input and display the final plan.
+- The goal was to keep the design simple enough to test the scheduling logic separately from the interface.
 
 **b. Design changes**
 
