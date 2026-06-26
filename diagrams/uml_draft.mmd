@@ -1,0 +1,62 @@
+classDiagram
+    class Owner {
+        +str name
+        +list~str~ preferences
+        +update_name(name: str) void
+        +add_preference(preference: str) void
+    }
+
+    class Pet {
+        +str name
+        +str species
+        +str breed
+        +str notes
+        +update_profile(name: str, species: str, breed: str, notes: str) void
+    }
+
+    class Task {
+        +str title
+        +int duration_minutes
+        +str priority
+        +str category
+        +update_task(title: str, duration_minutes: int, priority: str, category: str) void
+        +is_high_priority() bool
+    }
+
+    class ScheduleItem {
+        +Task task
+        +str start_time
+        +str end_time
+        +str rationale
+        +describe() str
+    }
+
+    class DailyPlan {
+        +Owner owner
+        +Pet pet
+        +int available_minutes
+        +list~ScheduleItem~ items
+        +add_item(item: ScheduleItem) void
+        +remaining_minutes() int
+        +summary() str
+    }
+
+    class Scheduler {
+        +Owner owner
+        +Pet pet
+        +list~Task~ tasks
+        +int available_minutes
+        +prioritize_tasks() list~Task~
+        +build_daily_plan() DailyPlan
+        +explain_plan(plan: DailyPlan) str
+    }
+
+    Owner "1" o-- "1" Pet : cares for
+    Owner "1" --> "0..*" Task : defines
+    Pet "1" --> "0..*" Task : needs
+    Scheduler "1" --> "1" Owner : uses
+    Scheduler "1" --> "1" Pet : uses
+    Scheduler "1" --> "0..*" Task : schedules
+    Scheduler ..> DailyPlan : creates
+    DailyPlan "1" *-- "0..*" ScheduleItem : contains
+    ScheduleItem --> Task : wraps
