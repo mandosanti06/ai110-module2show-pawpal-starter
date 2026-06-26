@@ -54,12 +54,17 @@ classDiagram
         +overlaps(other: ScheduleItem) bool
     }
 
+    class UnscheduledTask {
+        +Task task
+        +str reason
+    }
+
     class DailyPlan {
         +Owner owner
         +date day
         +int available_minutes
         +list~ScheduleItem~ items
-        +list~Task~ unscheduled
+        +list~UnscheduledTask~ unscheduled
         +add_item(item: ScheduleItem) void
         +add_unscheduled(task: Task, reason: str) void
         +remaining_minutes() int
@@ -87,5 +92,6 @@ classDiagram
     Scheduler ..> DailyPlan : creates
     DailyPlan "1" --> "1" Owner : for
     DailyPlan "1" *-- "0..*" ScheduleItem : contains
-    DailyPlan "1" --> "0..*" Task : unscheduled
+    DailyPlan "1" *-- "0..*" UnscheduledTask : skipped
+    UnscheduledTask "0..*" --> "1" Task : refers to
     ScheduleItem "0..*" --> "1" Task : wraps

@@ -11,7 +11,7 @@
 **b. Design changes**
 
 Reviewing the skeleton against the scenario surfaced six bottlenecks. Each fix
-changed both `pawpal_system.py` and `diagrams/uml_draft.mmd`:
+changed both `pawpal_system.py` and `diagrams/uml.mmd`:
 
 - **Priority became an enum, not a string.** The scheduler's whole job is
   ranking tasks, but as a `str` they sorted alphabetically — `"high" < "low" <

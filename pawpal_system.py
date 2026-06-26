@@ -95,12 +95,19 @@ class ScheduleItem:
 
 
 @dataclass
+class UnscheduledTask:
+    # Keeps the "why" with the task so summary()/explain_plan() can show the gap.
+    task: Task
+    reason: str
+
+
+@dataclass
 class DailyPlan:
     owner: Owner
     day: date  # which day this plan covers (drives recurrence filtering)
     available_minutes: int
     items: list[ScheduleItem] = field(default_factory=list)
-    unscheduled: list[Task] = field(default_factory=list)  # dropped tasks + why (B6)
+    unscheduled: list[UnscheduledTask] = field(default_factory=list)  # dropped + why (B6)
 
     def add_item(self, item: ScheduleItem) -> None:
         raise NotImplementedError
