@@ -10,8 +10,28 @@
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+Reviewing the skeleton against the scenario surfaced six bottlenecks. Each fix
+changed both `pawpal_system.py` and `diagrams/uml_draft.mmd`:
+
+- **Priority became an enum, not a string.** The scheduler's whole job is
+  ranking tasks, but as a `str` they sorted alphabetically — `"high" < "low" <
+  "medium"` — which is backwards. I introduced `Priority(IntEnum)` so tasks sort
+  by rank. (A `__main__` self-check asserts this.)
+- **Times became `datetime.time`, not strings.** The scenario asks for conflict
+  handling, but you can't detect overlapping slots on strings. Real times let me
+  add `ScheduleItem.overlaps()` and `DailyPlan.has_conflicts()`.
+- **Supported multiple pets.** The original `Owner`–`Pet` link was one-to-one,
+  the `Scheduler` was bound to a single pet, and `Task` had no way to say which
+  pet it was for. I changed it to `Owner.pets: list[Pet]`, added `Task.pet`, and
+  dropped the single-pet binding so one scheduler can plan a multi-pet household.
+- **Added recurrence and anchored tasks.** `Task` gained `recurrence`
+  (once/daily/weekly) with `applies_on(day)` so the scheduler can pick "today's"
+  tasks, and `fixed_start` with `is_anchored()` so fixed-time tasks (meds at
+  08:00) can be expressed — which is also what gives conflict detection
+  something real to catch.
+- **Plans now record skipped tasks.** When a task doesn't fit the time budget it
+  goes into `DailyPlan.unscheduled` via `add_unscheduled(task, reason)` instead
+  of silently disappearing, so the plan can still explain the gap.
 
 ---
 
