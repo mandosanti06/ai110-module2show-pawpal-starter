@@ -27,12 +27,15 @@ class Owner:
     pets: list[Pet] = field(default_factory=list)  # was 1:1 — owners can have pet(s)
 
     def update_name(self, name: str) -> None:
+        """Update the owner's display name."""
         self.name = name
 
     def add_preference(self, preference: str) -> None:
+        """Add one owner preference."""
         self.preferences.append(preference)
 
     def add_pet(self, pet: Pet) -> None:
+        """Attach a pet to this owner."""
         self.pets.append(pet)
 
 @dataclass
@@ -44,12 +47,14 @@ class Pet:
     tasks: list[Task] = field(default_factory=list)
 
     def update_profile(self, name: str, species: str, breed: str, notes: str) -> None:
+        """Replace the pet's profile details."""
         self.name = name
         self.species = species
         self.breed = breed
         self.notes = notes
 
     def add_task(self, task: Task) -> None:
+        """Attach a task to this pet."""
         self.tasks.append(task)
 
 
@@ -66,14 +71,17 @@ class Task:
     completed: bool = False
 
     def mark_complete(self) -> None:
+        """Mark the task as complete."""
         self.completed = True
 
     @property
     def status(self) -> str:
+        """Return the task's completion status."""
         return "complete" if self.completed else "pending"
 
     @status.setter
     def status(self, value: str) -> None:
+        """Set completion from a status string."""
         self.completed = value == "complete"
 
     def update_task(
@@ -83,12 +91,14 @@ class Task:
         priority: Priority,
         category: str,
     ) -> None:
+        """Replace editable task details."""
         self.title = title
         self.duration_minutes = duration_minutes
         self.priority = priority
         self.category = category
 
     def is_high_priority(self) -> bool:
+        """Return whether this task is high priority."""
         return self.priority == Priority.HIGH
 
     def applies_on(self, day: date) -> bool:
@@ -111,6 +121,7 @@ class ScheduleItem:
     rationale: str
 
     def describe(self) -> str:
+        """Return a human-readable scheduled item description."""
         return (
             f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}: "
             f"{self.task.title} ({self.rationale})"
@@ -136,6 +147,7 @@ class DailyPlan:
     unscheduled: list[UnscheduledTask] = field(default_factory=list)  # dropped + why (B6)
 
     def add_item(self, item: ScheduleItem) -> None:
+        """Add a scheduled item to the plan."""
         self.items.append(item)
 
     def add_unscheduled(self, task: Task, reason: str) -> None:
@@ -143,6 +155,7 @@ class DailyPlan:
         self.unscheduled.append(UnscheduledTask(task, reason))
 
     def remaining_minutes(self) -> int:
+        """Return unscheduled minutes still available in the plan."""
         used = sum(item.task.duration_minutes for item in self.items)
         return self.available_minutes - used
 
@@ -154,6 +167,7 @@ class DailyPlan:
         return False
 
     def summary(self) -> str:
+        """Return a readable summary of scheduled and unscheduled tasks."""
         scheduled = ", ".join(item.describe() for item in self.items) or "No scheduled tasks"
         unscheduled = ", ".join(
             f"{item.task.title} ({item.reason})" for item in self.unscheduled
@@ -171,6 +185,7 @@ class Scheduler:
     day: date
 
     def prioritize_tasks(self) -> list[Task]:
+        """Return schedulable tasks ordered by scheduling priority."""
         return sorted(
             (
                 task
@@ -181,6 +196,7 @@ class Scheduler:
         )
 
     def build_daily_plan(self) -> DailyPlan:
+        """Build a daily plan from prioritized tasks."""
         plan = DailyPlan(self.owner, self.day, self.available_minutes)
         next_start = time(9, 0)
 
@@ -208,6 +224,7 @@ class Scheduler:
         return plan
 
     def explain_plan(self, plan: DailyPlan) -> str:
+        """Return the plan's explanation text."""
         return plan.summary()
 
 
