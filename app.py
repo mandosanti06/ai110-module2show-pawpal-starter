@@ -1,3 +1,5 @@
+from datetime import date
+
 import streamlit as st
 import pawpal_system
 
@@ -48,9 +50,14 @@ else:
 
 pet_name = st.text_input("Pet name", value="Mochi")
 species = st.selectbox("Species", ["dog", "cat", "other"])
+if "pet" not in st.session_state:
+    st.session_state.pet = pawpal_system.Pet(pet_name, species, "", "")
+    st.session_state.owner.add_pet(st.session_state.pet)
+else:
+    st.session_state.pet.update_profile(pet_name, species, "", "")
 
 st.markdown("### Tasks")
-st.caption("Add a few tasks. In your final version, these should feed into your scheduler.")
+st.caption("Add a few tasks. These feed into your scheduler.")
 
 if "tasks" not in st.session_state:
     st.session_state.tasks = []
@@ -64,31 +71,56 @@ with col3:
     priority = st.selectbox("Priority", ["low", "medium", "high"], index=2)
 
 if st.button("Add task"):
-    st.session_state.tasks.append(
-        {"title": task_title, "duration_minutes": int(duration), "priority": priority}
+    task = pawpal_system.Task(
+        task_title,
+        int(duration),
+        pawpal_system.Priority[priority.upper()],
+        "care",
+        st.session_state.pet,
     )
+    st.session_state.pet.add_task(task)
+    st.session_state.tasks.append(task)
 
 if st.session_state.tasks:
     st.write("Current tasks:")
-    st.table(st.session_state.tasks)
+    st.table(
+        [
+            {
+                "pet": task.pet.name,
+                "title": task.title,
+                "duration_minutes": task.duration_minutes,
+                "priority": task.priority.name.lower(),
+            }
+            for task in st.session_state.tasks
+        ]
+    )
 else:
     st.info("No tasks yet. Add one above.")
 
 st.divider()
 
 st.subheader("Build Schedule")
-st.caption("This button should call your scheduling logic once you implement it.")
+available_minutes = st.number_input("Available minutes today", min_value=1, max_value=480, value=120)
 
 if st.button("Generate schedule"):
-    st.warning(
-        "Not implemented yet. Next step: create your scheduling logic (classes/functions) and call it here."
+    scheduler = pawpal_system.Scheduler(
+        st.session_state.owner,
+        st.session_state.tasks,
+        int(available_minutes),
+        date.today(),
     )
-    st.markdown(
-        """
-Suggested approach:
-1. Design your UML (draft).
-2. Create class stubs (no logic).
-3. Implement scheduling behavior.
-4. Connect your scheduler here and display results.
-"""
-    )
+    plan = scheduler.build_daily_plan()
+
+    st.markdown("### Today's Schedule")
+    if plan.items:
+        for item in plan.items:
+            st.write(f"- {item.task.pet.name}: {item.describe()}")
+    else:
+        st.info("No scheduled tasks.")
+
+    if plan.unscheduled:
+        st.markdown("### Unscheduled")
+        for item in plan.unscheduled:
+            st.write(f"- {item.task.title}: {item.reason}")
+
+    st.caption(scheduler.explain_plan(plan))
