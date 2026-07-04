@@ -63,14 +63,18 @@ class Task:
     recurrence: Recurrence = Recurrence.ONCE
     weekday: int | None = None  # ponytail: 0=Mon..6=Sun; only WEEKLY needs it
     fixed_start: time | None = None  # anchored tasks (meds @ 08:00); None = flexible
-<<<<<<< HEAD
     completed: bool = False
-=======
-    status: str = "pending"
 
     def mark_complete(self) -> None:
-        self.status = "complete"
->>>>>>> add-quick-tests-bxfxh
+        self.completed = True
+
+    @property
+    def status(self) -> str:
+        return "complete" if self.completed else "pending"
+
+    @status.setter
+    def status(self, value: str) -> None:
+        self.completed = value == "complete"
 
     def update_task(
         self,
