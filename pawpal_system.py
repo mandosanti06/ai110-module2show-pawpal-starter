@@ -41,12 +41,16 @@ class Pet:
     species: str
     breed: str
     notes: str
+    tasks: list[Task] = field(default_factory=list)
 
     def update_profile(self, name: str, species: str, breed: str, notes: str) -> None:
         self.name = name
         self.species = species
         self.breed = breed
         self.notes = notes
+
+    def add_task(self, task: Task) -> None:
+        self.tasks.append(task)
 
 
 @dataclass
@@ -59,7 +63,14 @@ class Task:
     recurrence: Recurrence = Recurrence.ONCE
     weekday: int | None = None  # ponytail: 0=Mon..6=Sun; only WEEKLY needs it
     fixed_start: time | None = None  # anchored tasks (meds @ 08:00); None = flexible
+<<<<<<< HEAD
     completed: bool = False
+=======
+    status: str = "pending"
+
+    def mark_complete(self) -> None:
+        self.status = "complete"
+>>>>>>> add-quick-tests-bxfxh
 
     def update_task(
         self,
