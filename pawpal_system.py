@@ -258,6 +258,15 @@ class Scheduler:
         )
         return pet_minutes + task.duration_minutes > self.max_minutes_per_pet
 
+    def selection_rationale(self, task: Task, placement: str) -> str:
+        """Explain why a scheduled task was selected."""
+        parts = [placement, f"{task.priority.name.lower()} priority"]
+        if self.preference_score(task):
+            parts.append("matches owner preference")
+        if task.deadline:
+            parts.append(f"deadline {task.deadline_time}")
+        return ", ".join(parts)
+
     def preference_score(self, task: Task) -> int:
         """Score tasks that match owner preference words."""
         text = f"{task.title} {task.category} {task.pet.notes}".lower()
@@ -308,13 +317,14 @@ class Scheduler:
                 else _first_available_start(next_start, task.duration_minutes, plan.items)
             )
             end = _add_minutes(start, task.duration_minutes)
-            item = ScheduleItem(task, start, end, "fixed start" if task.is_anchored() else "next available")
+            placement = "fixed start" if task.is_anchored() else "next available"
+            item = ScheduleItem(task, start, end, self.selection_rationale(task, placement))
 
             if self.has_conflict(item, plan.items):
                 if not task.is_anchored():
                     start = _first_available_start(end, task.duration_minutes, plan.items)
                     end = _add_minutes(start, task.duration_minutes)
-                    item = ScheduleItem(task, start, end, "next open slot")
+                    item = ScheduleItem(task, start, end, self.selection_rationale(task, "next open slot"))
                 if self.has_conflict(item, plan.items):
                     plan.add_unscheduled(task, "conflicts with scheduled task")
                     continue

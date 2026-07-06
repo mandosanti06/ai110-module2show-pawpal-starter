@@ -18,4 +18,4 @@
 - [x] Detect duplicate daily tasks for the same pet, title, and category.
 - [x] Try the next open slot for flexible tasks before marking them unscheduled.
 - [x] Add a maximum daily minutes limit per pet.
-- [ ] Record why each scheduled task was selected.
+- [x] Record why each scheduled task was selected.
