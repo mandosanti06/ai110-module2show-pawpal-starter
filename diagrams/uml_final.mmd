@@ -1,0 +1,122 @@
+classDiagram
+    class Priority {
+        <<enumeration>>
+        LOW
+        MEDIUM
+        HIGH
+    }
+
+    class Recurrence {
+        <<enumeration>>
+        ONCE
+        DAILY
+        WEEKLY
+    }
+
+    class Owner {
+        +str name
+        +list~str~ preferences
+        +list~Pet~ pets
+        +update_name(name: str) void
+        +add_preference(preference: str) void
+        +add_pet(pet: Pet) void
+    }
+
+    class Pet {
+        +str name
+        +str species
+        +str breed
+        +str notes
+        +list~Task~ tasks
+        +update_profile(name: str, species: str, breed: str, notes: str) void
+        +add_task(task: Task) void
+    }
+
+    class Task {
+        +str title
+        +int duration_minutes
+        +Priority priority
+        +str category
+        +Pet pet
+        +Recurrence recurrence
+        +int weekday
+        +time fixed_start
+        +time deadline
+        +date due_date
+        +bool completed
+        +str status
+        +str time
+        +str deadline_time
+        +mark_complete(completed_on: date) Task
+        +next_occurrence(completed_on: date) Task
+        +update_task(title: str, duration_minutes: int, priority: Priority, category: str) void
+        +is_high_priority() bool
+        +applies_on(day: date) bool
+        +is_anchored() bool
+    }
+
+    class ScheduleItem {
+        +Task task
+        +time start_time
+        +time end_time
+        +str rationale
+        +describe() str
+        +overlaps(other: ScheduleItem) bool
+    }
+
+    class UnscheduledTask {
+        +Task task
+        +str reason
+    }
+
+    class DailyPlan {
+        +Owner owner
+        +date day
+        +int available_minutes
+        +list~ScheduleItem~ items
+        +list~UnscheduledTask~ unscheduled
+        +add_item(item: ScheduleItem) void
+        +add_unscheduled(task: Task, reason: str) void
+        +remaining_minutes() int
+        +has_conflicts() bool
+        +summary() str
+    }
+
+    class Scheduler {
+        +Owner owner
+        +list~Task~ tasks
+        +int available_minutes
+        +date day
+        +int max_minutes_per_pet
+        +sort_by_time(tasks: list~Task~) list~Task~
+        +filter_tasks(status: str, pet_name: str) list~Task~
+        +complete_task(task: Task, completed_on: date) Task
+        +conflict_warnings(tasks: list~Task~) list~str~
+        +tasks_for_day() list~Task~
+        +has_conflict(item: ScheduleItem, items: list~ScheduleItem~) bool
+        +violates_pet_spacing(item: ScheduleItem, items: list~ScheduleItem~) bool
+        +would_monopolize_category(task: Task, plan: DailyPlan, daily_categories: set~str~) bool
+        +exceeds_pet_minutes(task: Task, plan: DailyPlan) bool
+        +selection_rationale(task: Task, placement: str) str
+        +preference_score(task: Task) int
+        +preference_tokens() list~str~
+        +task_sort_key(task: Task) tuple
+        +prioritize_tasks() list~Task~
+        +build_daily_plan() DailyPlan
+        +explain_plan(plan: DailyPlan) str
+    }
+
+    Owner "1" o-- "0..*" Pet : cares for
+    Pet "1" o-- "0..*" Task : has tasks
+    Task "0..*" --> "1" Pet : for
+    Task ..> Priority : ranked by
+    Task ..> Recurrence : repeats as
+    Scheduler "1" --> "1" Owner : uses
+    Scheduler "1" --> "0..*" Task : schedules
+    Scheduler ..> ScheduleItem : checks conflicts
+    Scheduler ..> DailyPlan : creates
+    DailyPlan "1" --> "1" Owner : for
+    DailyPlan "1" *-- "0..*" ScheduleItem : contains
+    DailyPlan "1" *-- "0..*" UnscheduledTask : explains skipped
+    ScheduleItem "0..*" --> "1" Task : wraps
+    UnscheduledTask "0..*" --> "1" Task : refers to

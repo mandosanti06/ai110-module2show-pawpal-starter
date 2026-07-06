@@ -42,6 +42,11 @@ pip install -r requirements.txt
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
 
+## UML Diagrams
+
+- Initial draft: [`diagrams/uml_draft.mmd`](diagrams/uml_draft.mmd)
+- Final implementation diagram: [`diagrams/uml_final.mmd`](diagrams/uml_final.mmd)
+
 ## 🖥️ Sample Output
 
 ```
