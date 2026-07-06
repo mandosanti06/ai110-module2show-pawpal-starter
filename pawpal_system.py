@@ -69,11 +69,38 @@ class Task:
     weekday: int | None = None  # ponytail: 0=Mon..6=Sun; only WEEKLY needs it
     fixed_start: time | None = None  # anchored tasks (meds @ 08:00); None = flexible
     deadline: time | None = None
+    due_date: date | None = None
     completed: bool = False
 
-    def mark_complete(self) -> None:
-        """Mark the task as complete."""
+    def mark_complete(self, completed_on: date | None = None) -> Task | None:
+        """Mark complete and create the next recurring task when needed."""
         self.completed = True
+        next_task = self.next_occurrence(completed_on or date.today())
+        if next_task is not None:
+            self.pet.add_task(next_task)
+        return next_task
+
+    def next_occurrence(self, completed_on: date) -> Task | None:
+        """Return the next daily/weekly task instance."""
+        if self.recurrence == Recurrence.DAILY:
+            next_due = completed_on + timedelta(days=1)
+        elif self.recurrence == Recurrence.WEEKLY:
+            next_due = completed_on + timedelta(days=7)
+        else:
+            return None
+
+        return Task(
+            self.title,
+            self.duration_minutes,
+            self.priority,
+            self.category,
+            self.pet,
+            self.recurrence,
+            self.weekday if self.recurrence == Recurrence.WEEKLY else None,
+            self.fixed_start,
+            self.deadline,
+            next_due,
+        )
 
     @property
     def status(self) -> str:
@@ -104,6 +131,8 @@ class Task:
 
     def applies_on(self, day: date) -> bool:
         """Does this (possibly recurring) task run on `day`?"""
+        if self.due_date is not None:
+            return self.due_date == day
         if self.recurrence == Recurrence.DAILY:
             return True
         if self.recurrence == Recurrence.WEEKLY:
@@ -212,6 +241,13 @@ class Scheduler:
             if (status is None or task.status == status)
             and (pet_name is None or task.pet.name == pet_name)
         ]
+
+    def complete_task(self, task: Task, completed_on: date | None = None) -> Task | None:
+        """Complete a task and track its next recurring instance."""
+        next_task = task.mark_complete(completed_on or self.day)
+        if next_task is not None and next_task not in self.tasks:
+            self.tasks.append(next_task)
+        return next_task
 
     def tasks_for_day(self) -> list[Task]:
         """Return incomplete owner tasks whose recurrence applies today."""
@@ -404,6 +440,15 @@ if __name__ == "__main__":
     assert not ScheduleItem(walk, time(9), time(9, 30), "").overlaps(
         ScheduleItem(meds, time(9, 30), time(9, 45), "")
     )
+    daily_task = Task("Daily meds", 15, Priority.HIGH, "health", dog, Recurrence.DAILY)
+    weekly_task = Task("Weekly brush", 20, Priority.LOW, "grooming", cat, Recurrence.WEEKLY, weekday=day.weekday())
+    daily_next = daily_task.mark_complete(day)
+    assert daily_next is not None
+    assert daily_next.due_date == day + timedelta(days=1)
+    assert daily_next.applies_on(day + timedelta(days=1))
+    weekly_next = weekly_task.mark_complete(day)
+    assert weekly_next is not None
+    assert weekly_next.due_date == day + timedelta(days=7)
 
     scheduler = Scheduler(owner, [walk, meds, brush, ignored, conflict, fixed_conflict, too_long, done], 80, day)
     plan = scheduler.build_daily_plan()
