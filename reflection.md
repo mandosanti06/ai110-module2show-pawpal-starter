@@ -44,8 +44,15 @@ changed both `pawpal_system.py` and `diagrams/uml.mmd`:
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+- The lightweight warning system in `Scheduler.conflict_warnings()` only checks
+  tasks with the exact same fixed start time. The deeper schedule builder still
+  uses `ScheduleItem.overlaps()` for duration-based conflicts, but the warning
+  pass is intentionally simpler.
+- That tradeoff is reasonable here because the terminal demo needs a friendly
+  warning instead of a crash, and exact-time conflicts are the easiest mistake
+  for a pet owner to understand and fix quickly. A full calendar-style conflict
+  report would be more complete, but it would add complexity before the app
+  needs it.
 
 ---
 

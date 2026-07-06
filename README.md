@@ -67,16 +67,14 @@ Sample test output:
 # Paste your pytest output here
 ```
 
-## 📐 Smarter Scheduling
-
-> Fill in once you've implemented scheduling logic.
+## Smarter Scheduling
 
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Sorting behavior | `Scheduler.sort_by_time()`, `Scheduler.task_sort_key()`, `Scheduler.prioritize_tasks()` | Sorts fixed-time tasks by `HH:MM`; scheduling priority also considers anchored tasks, priority, deadline, owner preferences, and duration. |
+| Filtering behavior | `Scheduler.filter_tasks()`, `Scheduler.tasks_for_day()`, `Task.applies_on()` | Filters by pet name, completion status, owner pets, due date, recurrence, and duplicate daily task identity. |
+| Conflict detection logic | `Scheduler.conflict_warnings()`, `Scheduler.has_conflict()`, `ScheduleItem.overlaps()`, `DailyPlan.has_conflicts()` | Prints lightweight warnings for exact same fixed start times and prevents overlapping scheduled time ranges when building the plan. |
+| Recurring task logic | `Task.mark_complete()`, `Task.next_occurrence()`, `Scheduler.complete_task()` | Completing daily tasks creates a new task due tomorrow; completing weekly tasks creates a new task due seven days later. |
 
 ## 📸 Demo Walkthrough
 

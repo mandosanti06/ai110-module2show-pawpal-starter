@@ -4,6 +4,9 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from enum import Enum, IntEnum
 
+ANCHOR_DATE = date(2000, 1, 1)
+FOOD_EXERCISE_SPACING_MINUTES = 30
+
 
 class Priority(IntEnum):
     # ponytail: IntEnum, not str. The whole app sorts tasks by priority, and
@@ -73,7 +76,11 @@ class Task:
     completed: bool = False
 
     def mark_complete(self, completed_on: date | None = None) -> Task | None:
-        """Mark complete and create the next recurring task when needed."""
+        """Mark this task complete and return the next recurring task, if any.
+
+        Daily tasks roll forward by one day. Weekly tasks roll forward by seven
+        days. One-time tasks return `None`.
+        """
         self.completed = True
         next_task = self.next_occurrence(completed_on or date.today())
         if next_task is not None:
@@ -81,7 +88,7 @@ class Task:
         return next_task
 
     def next_occurrence(self, completed_on: date) -> Task | None:
-        """Return the next daily/weekly task instance."""
+        """Clone this recurring task with the next due date."""
         if self.recurrence == Recurrence.DAILY:
             next_due = completed_on + timedelta(days=1)
         elif self.recurrence == Recurrence.WEEKLY:
@@ -130,7 +137,7 @@ class Task:
         return self.priority == Priority.HIGH
 
     def applies_on(self, day: date) -> bool:
-        """Does this (possibly recurring) task run on `day`?"""
+        """Return whether this task should be considered for `day`."""
         if self.due_date is not None:
             return self.due_date == day
         if self.recurrence == Recurrence.DAILY:
@@ -168,7 +175,7 @@ class ScheduleItem:
         )
 
     def overlaps(self, other: ScheduleItem) -> bool:
-        """Do these two scheduled slots collide in time?"""
+        """Return whether two half-open time ranges overlap."""
         return self.start_time < other.end_time and other.start_time < self.end_time
 
 
@@ -195,12 +202,12 @@ class DailyPlan:
         self.unscheduled.append(UnscheduledTask(task, reason))
 
     def remaining_minutes(self) -> int:
-        """Return unscheduled minutes still available in the plan."""
+        """Return the day's remaining time budget in minutes."""
         used = sum(item.task.duration_minutes for item in self.items)
         return self.available_minutes - used
 
     def has_conflicts(self) -> bool:
-        """True if any two scheduled items overlap in time."""
+        """Return whether any pair of scheduled items overlaps."""
         for index, item in enumerate(self.items):
             if any(item.overlaps(other) for other in self.items[index + 1 :]):
                 return True
@@ -226,7 +233,7 @@ class Scheduler:
     max_minutes_per_pet: int | None = None
 
     def sort_by_time(self, tasks: list[Task] | None = None) -> list[Task]:
-        """Return tasks sorted by their HH:MM time string."""
+        """Return tasks ordered by fixed start time, with flexible tasks last."""
         return sorted(tasks or self.tasks, key=lambda task: task.time)
 
     def filter_tasks(
@@ -234,7 +241,7 @@ class Scheduler:
         status: str | None = None,
         pet_name: str | None = None,
     ) -> list[Task]:
-        """Return tasks matching optional completion status and pet name."""
+        """Return tasks matching optional completion status and pet name filters."""
         return [
             task
             for task in self.tasks
@@ -243,14 +250,14 @@ class Scheduler:
         ]
 
     def complete_task(self, task: Task, completed_on: date | None = None) -> Task | None:
-        """Complete a task and track its next recurring instance."""
+        """Complete a task and append its next recurring instance to this scheduler."""
         next_task = task.mark_complete(completed_on or self.day)
         if next_task is not None and next_task not in self.tasks:
             self.tasks.append(next_task)
         return next_task
 
     def conflict_warnings(self, tasks: list[Task] | None = None) -> list[str]:
-        """Return lightweight warnings for tasks scheduled at the same time."""
+        """Return warnings for fixed-start tasks that share the same time."""
         by_time: dict[str, list[Task]] = {}
         for task in tasks or self.tasks:
             if task.fixed_start is None:
@@ -266,7 +273,7 @@ class Scheduler:
         return warnings
 
     def tasks_for_day(self) -> list[Task]:
-        """Return incomplete owner tasks whose recurrence applies today."""
+        """Return unique, incomplete owner tasks that apply on this scheduler's day."""
         tasks = []
         seen = set()
         for task in self.tasks:
@@ -280,29 +287,34 @@ class Scheduler:
         return tasks
 
     def has_conflict(self, item: ScheduleItem, items: list[ScheduleItem]) -> bool:
-        """Return whether an item overlaps any scheduled item."""
+        """Return whether one scheduled item overlaps any existing scheduled item."""
         return any(item.overlaps(existing) for existing in items)
 
     def violates_pet_spacing(self, item: ScheduleItem, items: list[ScheduleItem]) -> bool:
-        """Avoid scheduling food and exercise too close for the same pet."""
+        """Return whether food and exercise are too close for the same pet."""
         for existing in items:
             if item.task.pet != existing.task.pet:
                 continue
             categories = {item.task.category, existing.task.category}
-            if categories == {"food", "exercise"} and _gap_minutes(item, existing) < 30:
+            if categories == {"food", "exercise"} and _gap_minutes(item, existing) < FOOD_EXERCISE_SPACING_MINUTES:
                 return True
         return False
 
-    def would_monopolize_category(self, task: Task, plan: DailyPlan) -> bool:
-        """Avoid spending the whole day on one category when others apply."""
+    def would_monopolize_category(
+        self,
+        task: Task,
+        plan: DailyPlan,
+        daily_categories: set[str],
+    ) -> bool:
+        """Return whether adding this task would spend all time on one category."""
         category_minutes = sum(
             item.task.duration_minutes for item in plan.items if item.task.category == task.category
         )
-        has_other_category = any(other.category != task.category for other in self.tasks_for_day())
+        has_other_category = any(category != task.category for category in daily_categories)
         return has_other_category and category_minutes + task.duration_minutes >= plan.available_minutes
 
     def exceeds_pet_minutes(self, task: Task, plan: DailyPlan) -> bool:
-        """Return whether this task would exceed the pet's daily limit."""
+        """Return whether adding this task would exceed the pet's daily limit."""
         if self.max_minutes_per_pet is None:
             return False
         pet_minutes = sum(
@@ -311,7 +323,7 @@ class Scheduler:
         return pet_minutes + task.duration_minutes > self.max_minutes_per_pet
 
     def selection_rationale(self, task: Task, placement: str) -> str:
-        """Explain why a scheduled task was selected."""
+        """Build the human-readable reason shown for a scheduled task."""
         parts = [placement, f"{task.priority.name.lower()} priority"]
         if self.preference_score(task):
             parts.append("matches owner preference")
@@ -320,16 +332,20 @@ class Scheduler:
         return ", ".join(parts)
 
     def preference_score(self, task: Task) -> int:
-        """Score tasks that match owner preference words."""
+        """Return how many owner preference tokens match this task."""
         text = f"{task.title} {task.category} {task.pet.notes}".lower()
-        return sum(
-            token.rstrip("s") in text
+        return sum(token in text for token in self.preference_tokens())
+
+    def preference_tokens(self) -> list[str]:
+        """Return normalized owner preference words used for simple scoring."""
+        return [
+            token.rstrip("s")
             for preference in self.owner.preferences
             for token in preference.lower().split()
-        )
+        ]
 
     def task_sort_key(self, task: Task) -> tuple[bool, int, str, int, int]:
-        """Anchored first, then priority, deadline, preference, duration."""
+        """Return the scheduler's priority tuple for one task."""
         return (
             not task.is_anchored(),
             -task.priority,
@@ -339,23 +355,24 @@ class Scheduler:
         )
 
     def prioritize_tasks(self) -> list[Task]:
-        """Return schedulable tasks ordered by scheduling priority."""
+        """Return today's tasks ordered by anchor, priority, deadline, preference, and duration."""
         return sorted(
             self.tasks_for_day(),
             key=self.task_sort_key,
         )
 
     def build_daily_plan(self) -> DailyPlan:
-        """Build a daily plan from prioritized tasks."""
+        """Build a conflict-checked daily schedule from prioritized tasks."""
         plan = DailyPlan(self.owner, self.day, self.available_minutes)
         next_start = time(9, 0)
+        daily_categories = {task.category for task in self.tasks_for_day()}
 
         for task in self.prioritize_tasks():
             if task.duration_minutes > plan.remaining_minutes():
                 plan.add_unscheduled(task, "not enough available minutes")
                 continue
 
-            if self.would_monopolize_category(task, plan):
+            if self.would_monopolize_category(task, plan, daily_categories):
                 plan.add_unscheduled(task, "category would use all available time")
                 continue
 
@@ -398,19 +415,22 @@ class Scheduler:
 
 
 def _add_minutes(start: time, minutes: int) -> time:
-    return (datetime.combine(date.today(), start) + timedelta(minutes=minutes)).time()
+    """Return a time offset by `minutes` from `start`."""
+    return (datetime.combine(ANCHOR_DATE, start) + timedelta(minutes=minutes)).time()
 
 
 def _first_available_start(start: time, minutes: int, items: list[ScheduleItem]) -> time:
+    """Return the first non-overlapping start at or after `start`."""
     candidate = start
     for existing in sorted(items, key=lambda item: item.start_time):
-        candidate_item = ScheduleItem(existing.task, candidate, _add_minutes(candidate, minutes), "")
-        if candidate_item.overlaps(existing):
+        candidate_end = _add_minutes(candidate, minutes)
+        if candidate < existing.end_time and existing.start_time < candidate_end:
             candidate = existing.end_time
     return candidate
 
 
 def _gap_minutes(first: ScheduleItem, second: ScheduleItem) -> int:
+    """Return the minutes between two non-overlapping items, or 0 if they overlap."""
     if first.end_time <= second.start_time:
         return _minutes_between(first.end_time, second.start_time)
     if second.end_time <= first.start_time:
@@ -419,7 +439,8 @@ def _gap_minutes(first: ScheduleItem, second: ScheduleItem) -> int:
 
 
 def _minutes_between(start: time, end: time) -> int:
-    delta = datetime.combine(date.today(), end) - datetime.combine(date.today(), start)
+    """Return whole minutes from `start` to `end`."""
+    delta = datetime.combine(ANCHOR_DATE, end) - datetime.combine(ANCHOR_DATE, start)
     return int(delta.total_seconds() // 60)
 
 
