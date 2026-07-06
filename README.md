@@ -57,38 +57,71 @@ Today's Schedule
 python -m pytest
 ```
 
-The tests cover PawPal+ scheduling basics: task completion, adding tasks to pets, chronological sorting, daily recurrence, duplicate-time conflict warnings, empty schedules, ignored pets outside the owner, exact-time conflicts, adjacent non-overlapping tasks, weekly recurrence filtering, due-date recurrence, food/exercise spacing, and over-budget tasks.
+## Demo Walkthrough
+
+1. Open the Streamlit app and review the RawBlock-styled PawPal+ screen.
+2. Enter the owner name, pet name, and species in **Care Profile**.
+3. Add a task by entering a task title, duration in minutes, and priority, then click **Add task**.
+4. Review the pending task table. The app uses `Scheduler.filter_tasks()` to show the selected pet's pending tasks and `Scheduler.sort_by_time()` to display them in schedule order.
+5. Check the status messages above and below the task table. The app uses `st.success()` when tasks are sorted or no conflicts are found, and `st.warning()` for fixed-time conflicts.
+6. Enter the available minutes for the day and click **Generate schedule**.
+7. Review **Today's Schedule**, which is displayed as a table with time range, pet, task, and rationale.
+8. Review **Unscheduled** if it appears. Each skipped task includes the scheduler's reason, such as a time conflict or not enough available minutes.
+
+Example workflow:
+
+1. Add pet profile details for `Mochi`.
+2. Add a high-priority task like `Morning walk` for 20 minutes.
+3. Add more tasks with different priorities or fixed starts in code or the CLI demo.
+4. Generate the schedule.
+5. Confirm that sorted tasks, conflict warnings, and scheduled/unscheduled tables match the scheduler behavior.
+
+Sample CLI output from `python main.py`:
 
 ```text
-============================= test session starts ==============================
-platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0
-rootdir: /Users/mandosanti06/emdash/worktrees/ai110-module2show-pawpal-starter/phase-5-testing-and-verification-q9oz0
-collected 13 items
-
-tests/test_pawpal.py .............                                       [100%]
-
-============================== 13 passed in 0.02s ==============================
+Tasks Sorted by Time
+- 08:00: Nina Breakfast
+- 09:00: Milo Quiet feeding
+- 09:00: Nina Walk
+- 10:30: Milo Brush
+Nina Pending Tasks
+- Walk (pending)
+- Breakfast (pending)
+Schedule Warnings
+- Warning: 09:00 has overlapping tasks: Milo Quiet feeding, Nina Walk
+Today's Schedule
+- Nina: 08:00-08:20: Breakfast (fixed start, high priority)
+- Milo: 09:00-09:15: Quiet feeding (fixed start, medium priority)
+- Milo: 10:30-10:45: Brush (fixed start, low priority)
 ```
 
-Confidence Level: ★★★★★ (5/5)
+## Screenshots for Human Reviewers
 
-## Smarter Scheduling
+RawBlock input form:
 
-| Feature | Method(s) | Notes |
-|---------|-----------|-------|
-| Sorting behavior | `Scheduler.sort_by_time()`, `Scheduler.task_sort_key()`, `Scheduler.prioritize_tasks()` | Sorts fixed-time tasks by `HH:MM`; scheduling priority also considers anchored tasks, priority, deadline, owner preferences, and duration. |
-| Filtering behavior | `Scheduler.filter_tasks()`, `Scheduler.tasks_for_day()`, `Task.applies_on()` | Filters by pet name, completion status, owner pets, due date, recurrence, and duplicate daily task identity. |
-| Conflict detection logic | `Scheduler.conflict_warnings()`, `Scheduler.has_conflict()`, `ScheduleItem.overlaps()`, `DailyPlan.has_conflicts()` | Prints lightweight warnings for exact same fixed start times and prevents overlapping scheduled time ranges when building the plan. |
-| Recurring task logic | `Task.mark_complete()`, `Task.next_occurrence()`, `Scheduler.complete_task()` | Completing daily tasks creates a new task due tomorrow; completing weekly tasks creates a new task due seven days later. |
+![RawBlock input form](docs/screenshots/rawblock-main-input.png)
 
-## 📸 Demo Walkthrough
+RawBlock task preview:
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+![RawBlock task preview](docs/screenshots/rawblock-task-preview.png)
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+RawBlock generated schedule:
 
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+![RawBlock generated schedule](docs/screenshots/rawblock-generated-schedule.png)
+
+Mobile RawBlock layout:
+
+![Mobile RawBlock layout](docs/screenshots/rawblock-mobile.png)
+
+## UML Diagrams
+
+- Initial draft: [`diagrams/uml_draft.mmd`](diagrams/uml_draft.mmd)
+- Current UML: [`diagrams/uml.mmd`](diagrams/uml.mmd)
+- Final implementation diagram: [`diagrams/uml_final.mmd`](diagrams/uml_final.mmd)
+
+## Project Files
+
+- `app.py`: Streamlit user interface.
+- `pawpal_system.py`: domain classes and scheduling logic.
+- `main.py`: CLI demonstration of sorting, filtering, warnings, and plan generation.
+- `tests/test_pawpal.py`: basic regression tests.
