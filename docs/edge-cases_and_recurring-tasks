@@ -1,0 +1,24 @@
+# Edge Cases and Recurring Tasks
+
+## Happy Paths
+
+- A pet with several tasks gets a daily plan sorted by fixed time, priority, deadline, preference match, and duration.
+- A fixed-start task is scheduled at its exact time, and flexible tasks fill the next open slots.
+- A daily recurring task completed today creates a new task due tomorrow.
+- A weekly recurring task completed today creates a new task due seven days later.
+- Filtering by pet name or completion status returns only matching tasks.
+
+## Edge Cases
+
+- A pet has no tasks: the plan should say there are no scheduled tasks.
+- A task belongs to a pet not attached to the owner: it should be ignored.
+- A task is already complete: it should not be scheduled again.
+- Two fixed-start tasks have the exact same time: one should be scheduled and the other should be marked unscheduled for conflict, with a warning available.
+- Two tasks touch but do not overlap, such as 09:00-09:30 and 09:30-09:45: they should both be allowed.
+- A task takes more minutes than remain in the day: it should be unscheduled with a time reason.
+- Food and exercise for the same pet are less than 30 minutes apart: the later task should be unscheduled.
+- Duplicate daily tasks for the same pet, title, category, and recurrence should be collapsed for the day.
+- A weekly task with a weekday that does not match the plan day should not appear.
+- A recurring task with a `due_date` should apply only on that exact date.
+
+The most important tests are the ones that prove sorting is stable enough for real schedules, recurring completion creates the right next task, empty or irrelevant task lists do not crash, exact-time conflicts are rejected, and adjacent non-overlapping tasks are accepted.
