@@ -218,6 +218,16 @@ class Scheduler:
         """Return whether an item overlaps any scheduled item."""
         return any(item.overlaps(existing) for existing in items)
 
+    def violates_pet_spacing(self, item: ScheduleItem, items: list[ScheduleItem]) -> bool:
+        """Avoid scheduling food and exercise too close for the same pet."""
+        for existing in items:
+            if item.task.pet != existing.task.pet:
+                continue
+            categories = {item.task.category, existing.task.category}
+            if categories == {"food", "exercise"} and _gap_minutes(item, existing) < 30:
+                return True
+        return False
+
     def task_sort_key(self, task: Task) -> tuple[bool, int, int]:
         """Anchored first, then higher priority, then shorter duration."""
         return (not task.is_anchored(), -task.priority, task.duration_minutes)
@@ -251,6 +261,10 @@ class Scheduler:
                 plan.add_unscheduled(task, "conflicts with scheduled task")
                 continue
 
+            if self.violates_pet_spacing(item, plan.items):
+                plan.add_unscheduled(task, "too close to food or exercise")
+                continue
+
             plan.add_item(item)
             if not task.is_anchored():
                 next_start = end
@@ -274,6 +288,19 @@ def _first_available_start(start: time, minutes: int, items: list[ScheduleItem])
         if candidate_item.overlaps(existing):
             candidate = existing.end_time
     return candidate
+
+
+def _gap_minutes(first: ScheduleItem, second: ScheduleItem) -> int:
+    if first.end_time <= second.start_time:
+        return _minutes_between(first.end_time, second.start_time)
+    if second.end_time <= first.start_time:
+        return _minutes_between(second.end_time, first.start_time)
+    return 0
+
+
+def _minutes_between(start: time, end: time) -> int:
+    delta = datetime.combine(date.today(), end) - datetime.combine(date.today(), start)
+    return int(delta.total_seconds() // 60)
 
 
 if __name__ == "__main__":
