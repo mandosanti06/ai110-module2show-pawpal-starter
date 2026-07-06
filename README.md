@@ -80,20 +80,61 @@ Sample CLI output from `python main.py`:
 
 ```text
 Tasks Sorted by Time
-- 08:00: Nina Breakfast
-- 09:00: Milo Quiet feeding
-- 09:00: Nina Walk
-- 10:30: Milo Brush
++-------+------+---------------+-----------+
+| Time  | Pet  | Task          | Priority  |
++-------+------+---------------+-----------+
+| 08:00 | Nina | Breakfast     | !!! High  |
+| 09:00 | Milo | Quiet feeding | !! Medium |
+| 09:00 | Nina | Walk          | !! Medium |
+| 10:30 | Milo | Brush         | ! Low     |
++-------+------+---------------+-----------+
 Nina Pending Tasks
-- Walk (pending)
-- Breakfast (pending)
++-----------+---------+
+| Task      | Status  |
++-----------+---------+
+| Walk      | pending |
+| Breakfast | pending |
++-----------+---------+
 Schedule Warnings
 - Warning: 09:00 has overlapping tasks: Milo Quiet feeding, Nina Walk
 Today's Schedule
-- Nina: 08:00-08:20: Breakfast (fixed start, high priority)
-- Milo: 09:00-09:15: Quiet feeding (fixed start, medium priority)
-- Milo: 10:30-10:45: Brush (fixed start, low priority)
++-------------+------+---------------+------------------------------+
+| Time        | Pet  | Task          | Why scheduled                |
++-------------+------+---------------+------------------------------+
+| 08:00-08:20 | Nina | Breakfast     | fixed start, high priority   |
+| 09:00-09:15 | Milo | Quiet feeding | fixed start, medium priority |
+| 10:30-10:45 | Milo | Brush         | fixed start, low priority    |
++-------------+------+---------------+------------------------------+
 ```
+
+Priority scheduling is handled in `Scheduler.prioritize_tasks()`: tasks are ordered by priority first, then time, then deadline/preference/duration tie-breakers.
+
+## Data Persistence
+
+PawPal+ saves owner, pet, and task data to `data.json`.
+
+Workflow:
+
+1. `Owner.save_to_json("data.json")` converts the owner graph into plain dictionaries and writes JSON.
+2. `Owner.load_from_json("data.json")` rebuilds `Owner`, `Pet`, and `Task` objects and restores each task's `pet` link.
+3. `app.py` loads `data.json` when the Streamlit session starts and saves after profile/task changes.
+
+This uses custom dictionary conversion in `pawpal_system.py` instead of marshmallow because the object graph is small and only needs stdlib JSON support.
+
+## Formatting Features
+
+- `main.py` prints structured CLI tables with a small built-in `print_table()` helper.
+- `main.py` uses priority markers (`!!! High`, `!! Medium`, `! Low`) so important tasks stand out in plain text.
+- `app.py` displays generated schedules with `st.table()` and RawBlock-styled status/table CSS.
+
+Challenge files modified:
+
+- `pawpal_system.py`: JSON persistence, task serialization, and priority-first scheduling.
+- `app.py`: load/save workflow for `data.json` and schedule table output.
+- `main.py`: structured CLI table output and priority markers.
+- `tests/test_pawpal.py`: persistence and priority scheduling regression tests.
+- `README.md`: persistence workflow, formatting notes, and CLI examples.
+- `ai_interactions.md`: agent workflow documentation.
 
 ## Screenshots for Human Reviewers
 
@@ -125,3 +166,4 @@ Mobile RawBlock layout:
 - `pawpal_system.py`: domain classes and scheduling logic.
 - `main.py`: CLI demonstration of sorting, filtering, warnings, and plan generation.
 - `tests/test_pawpal.py`: basic regression tests.
+- `data.json`: generated persistence file for saved owner, pet, and task data.

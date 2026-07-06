@@ -8,6 +8,38 @@
 
 > Document your experience using an AI agent (e.g., Cursor Agent, Claude, Copilot) to make multi-step changes autonomously.
 
+### Challenge Pass: Persistence, Priority Scheduling, and Output Formatting
+
+**Files modified**
+
+- `pawpal_system.py`
+- `app.py`
+- `main.py`
+- `tests/test_pawpal.py`
+- `README.md`
+- `ai_interactions.md`
+
+**What I asked the agent to do**
+
+I asked Codex to use a subagent, inspect whether the challenge requirements were already complete, and implement only missing work for advanced scheduling, JSON persistence, priority scheduling, and professional CLI/UI output.
+
+**What the agent completed**
+
+- Used a read-only explorer subagent to check the existing scheduler and docs.
+- Confirmed the existing code already had advanced scheduling behaviors such as next-available placement, conflict handling, recurrence, spacing, preferences, and unscheduled reasons.
+- Added `Owner.save_to_json()` and `Owner.load_from_json()` with custom dictionary conversion so pets and tasks persist through `data.json`.
+- Restored saved `Task.pet` object references during load.
+- Updated Streamlit startup to load `data.json` and save profile/task changes.
+- Updated scheduling priority so `Scheduler.prioritize_tasks()` sorts by priority first, then time.
+- Added plain-text CLI tables and priority markers in `main.py`.
+- Added regression tests for JSON persistence and priority-before-time scheduling.
+- Updated `README.md` with persistence workflow, modified files, and CLI output examples.
+
+**Manual corrections**
+
+- No external serialization library was added. Custom dictionary conversion was kept because the saved object graph is small.
+- The existing advanced scheduling features were not rewritten after the subagent confirmed they were already present.
+
 **What task did you give the agent?**
 
 I used ChatGPT and Codex as AI collaborators across the project. The main

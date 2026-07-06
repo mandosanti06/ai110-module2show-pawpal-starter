@@ -1,7 +1,10 @@
 from datetime import date
+from pathlib import Path
 
 import streamlit as st
 import pawpal_system
+
+DATA_FILE = Path("data.json")
 
 
 def apply_design() -> None:
@@ -308,26 +311,40 @@ st.markdown(
 st.divider()
 
 section_intro("Care Profile", "Start with the owner and pet this schedule is for.")
-owner_name = st.text_input("Owner name", value="Jordan")
 if "owner" not in st.session_state:
-    st.session_state.owner = pawpal_system.Owner(owner_name)
-else:
-    st.session_state.owner.update_name(owner_name)
+    if DATA_FILE.exists():
+        st.session_state.owner = pawpal_system.Owner.load_from_json(DATA_FILE)
+    else:
+        st.session_state.owner = pawpal_system.Owner("Jordan")
 
-pet_name = st.text_input("Pet name", value="Mochi")
-species = st.selectbox("Species", ["dog", "cat", "other"])
 if "pet" not in st.session_state:
-    st.session_state.pet = pawpal_system.Pet(pet_name, species, "", "")
-    st.session_state.owner.add_pet(st.session_state.pet)
-else:
-    st.session_state.pet.update_profile(pet_name, species, "", "")
+    if st.session_state.owner.pets:
+        st.session_state.pet = st.session_state.owner.pets[0]
+    else:
+        st.session_state.pet = pawpal_system.Pet("Mochi", "dog", "", "")
+        st.session_state.owner.add_pet(st.session_state.pet)
+
+owner_name = st.text_input("Owner name", value=st.session_state.owner.name)
+st.session_state.owner.update_name(owner_name)
+
+pet_name = st.text_input("Pet name", value=st.session_state.pet.name)
+species_options = ["dog", "cat", "other"]
+species = st.selectbox(
+    "Species",
+    species_options,
+    index=species_options.index(st.session_state.pet.species)
+    if st.session_state.pet.species in species_options
+    else 2,
+)
+st.session_state.pet.update_profile(pet_name, species, st.session_state.pet.breed, st.session_state.pet.notes)
+st.session_state.owner.save_to_json(DATA_FILE)
 
 st.divider()
 
 section_intro("Tasks", "Add care tasks, then review the scheduler's sorted pending list.")
 
 if "tasks" not in st.session_state:
-    st.session_state.tasks = []
+    st.session_state.tasks = st.session_state.pet.tasks
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -346,7 +363,7 @@ if st.button("Add task"):
         st.session_state.pet,
     )
     st.session_state.pet.add_task(task)
-    st.session_state.tasks.append(task)
+    st.session_state.owner.save_to_json(DATA_FILE)
 
 if st.session_state.tasks:
     st.write("Current tasks:")
@@ -380,8 +397,7 @@ if st.button("Generate schedule"):
 
     st.markdown("### Today's Schedule")
     if plan.items:
-        for item in plan.items:
-            st.write(f"- {item.task.pet.name}: {item.describe()}")
+        st.table(schedule_rows(plan.items))
     else:
         st.info("No scheduled tasks.")
 

@@ -47,6 +47,50 @@ def test_sorting_correctness_returns_tasks_in_chronological_order():
     assert [task.title for task in sorted_tasks] == ["Meds", "Lunch", "Brush"]
 
 
+def test_priority_scheduling_orders_priority_before_time():
+    """The scheduler should choose high priority before earlier low priority work."""
+    owner, pet = owner_with_pet()
+    low_early = Task("Brush", 10, Priority.LOW, "grooming", pet, fixed_start=time(8, 0))
+    high_late = Task("Meds", 10, Priority.HIGH, "health", pet, fixed_start=time(9, 0))
+    scheduler = Scheduler(owner, [low_early, high_late], 60, DAY)
+
+    prioritized = scheduler.prioritize_tasks()
+
+    assert [task.title for task in prioritized] == ["Meds", "Brush"]
+
+
+def test_owner_json_persistence_round_trips_pets_and_tasks(tmp_path):
+    """Saved owners should reload with pets, tasks, enums, dates, and pet links intact."""
+    owner, pet = owner_with_pet()
+    owner.add_preference("morning walks")
+    task = Task(
+        "Morning walk",
+        20,
+        Priority.HIGH,
+        "exercise",
+        pet,
+        Recurrence.DAILY,
+        fixed_start=time(8, 30),
+        due_date=DAY,
+    )
+    pet.add_task(task)
+    path = tmp_path / "data.json"
+
+    owner.save_to_json(path)
+    loaded = Owner.load_from_json(path)
+
+    loaded_pet = loaded.pets[0]
+    loaded_task = loaded_pet.tasks[0]
+    assert loaded.name == owner.name
+    assert loaded.preferences == ["morning walks"]
+    assert loaded_pet.name == pet.name
+    assert loaded_task.pet is loaded_pet
+    assert loaded_task.priority == Priority.HIGH
+    assert loaded_task.recurrence == Recurrence.DAILY
+    assert loaded_task.fixed_start == time(8, 30)
+    assert loaded_task.due_date == DAY
+
+
 def test_daily_recurrence_creates_task_for_following_day():
     """Completing a daily task should create a new task due the following day."""
     owner, pet = owner_with_pet()
