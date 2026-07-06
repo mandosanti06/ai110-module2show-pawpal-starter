@@ -297,8 +297,13 @@ class Scheduler:
             item = ScheduleItem(task, start, end, "fixed start" if task.is_anchored() else "next available")
 
             if self.has_conflict(item, plan.items):
-                plan.add_unscheduled(task, "conflicts with scheduled task")
-                continue
+                if not task.is_anchored():
+                    start = _first_available_start(end, task.duration_minutes, plan.items)
+                    end = _add_minutes(start, task.duration_minutes)
+                    item = ScheduleItem(task, start, end, "next open slot")
+                if self.has_conflict(item, plan.items):
+                    plan.add_unscheduled(task, "conflicts with scheduled task")
+                    continue
 
             if self.violates_pet_spacing(item, plan.items):
                 plan.add_unscheduled(task, "too close to food or exercise")

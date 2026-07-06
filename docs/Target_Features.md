@@ -16,6 +16,6 @@
 - [x] Balance task categories so one category does not use all available time.
 - [x] Score tasks with owner preferences, such as boosting morning walks.
 - [x] Detect duplicate daily tasks for the same pet, title, and category.
-- [ ] Try the next open slot for flexible tasks before marking them unscheduled.
+- [x] Try the next open slot for flexible tasks before marking them unscheduled.
 - [ ] Add a maximum daily minutes limit per pet.
 - [ ] Record why each scheduled task was selected.
