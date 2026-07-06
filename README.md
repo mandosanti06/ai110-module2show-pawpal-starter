@@ -51,21 +51,26 @@ Today's Schedule
 - Milo: 10:30-10:45: Brush (fixed start)
 ```
 
-## 🧪 Testing PawPal+
+## Testing PawPal+
 
 ```bash
-# Run the full test suite:
-pytest
-
-# Run with coverage:
-pytest --cov
+python -m pytest
 ```
 
-Sample test output:
+The tests cover PawPal+ scheduling basics: task completion, adding tasks to pets, chronological sorting, daily recurrence, duplicate-time conflict warnings, empty schedules, ignored pets outside the owner, exact-time conflicts, adjacent non-overlapping tasks, weekly recurrence filtering, due-date recurrence, food/exercise spacing, and over-budget tasks.
 
+```text
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0
+rootdir: /Users/mandosanti06/emdash/worktrees/ai110-module2show-pawpal-starter/phase-5-testing-and-verification-q9oz0
+collected 13 items
+
+tests/test_pawpal.py .............                                       [100%]
+
+============================== 13 passed in 0.02s ==============================
 ```
-# Paste your pytest output here
-```
+
+Confidence Level: ★★★★★ (5/5)
 
 ## Smarter Scheduling
 
