@@ -206,14 +206,18 @@ class Scheduler:
             and (pet_name is None or task.pet.name == pet_name)
         ]
 
+    def tasks_for_day(self) -> list[Task]:
+        """Return incomplete owner tasks whose recurrence applies today."""
+        return [
+            task
+            for task in self.tasks
+            if task.pet in self.owner.pets and task.applies_on(self.day) and not task.completed
+        ]
+
     def prioritize_tasks(self) -> list[Task]:
         """Return schedulable tasks ordered by scheduling priority."""
         return sorted(
-            (
-                task
-                for task in self.tasks
-                if task.pet in self.owner.pets and task.applies_on(self.day) and not task.completed
-            ),
+            self.tasks_for_day(),
             key=lambda task: (not task.is_anchored(), -task.priority, task.duration_minutes),
         )
 
