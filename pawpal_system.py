@@ -68,6 +68,7 @@ class Task:
     recurrence: Recurrence = Recurrence.ONCE
     weekday: int | None = None  # ponytail: 0=Mon..6=Sun; only WEEKLY needs it
     fixed_start: time | None = None  # anchored tasks (meds @ 08:00); None = flexible
+    deadline: time | None = None
     completed: bool = False
 
     def mark_complete(self) -> None:
@@ -117,6 +118,11 @@ class Task:
     def time(self) -> str:
         """Return the task's sortable HH:MM time string."""
         return self.fixed_start.strftime("%H:%M") if self.fixed_start else "99:99"
+
+    @property
+    def deadline_time(self) -> str:
+        """Return the task's sortable deadline string."""
+        return self.deadline.strftime("%H:%M") if self.deadline else "99:99"
 
 @dataclass
 class ScheduleItem:
@@ -228,9 +234,9 @@ class Scheduler:
                 return True
         return False
 
-    def task_sort_key(self, task: Task) -> tuple[bool, int, int]:
-        """Anchored first, then higher priority, then shorter duration."""
-        return (not task.is_anchored(), -task.priority, task.duration_minutes)
+    def task_sort_key(self, task: Task) -> tuple[bool, int, str, int]:
+        """Anchored first, then priority, deadline, then shorter duration."""
+        return (not task.is_anchored(), -task.priority, task.deadline_time, task.duration_minutes)
 
     def prioritize_tasks(self) -> list[Task]:
         """Return schedulable tasks ordered by scheduling priority."""
