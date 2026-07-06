@@ -12,6 +12,7 @@ owner.add_pet(cat)
 
 tasks = [
     Task("Brush", 15, Priority.LOW, "grooming", cat, fixed_start=time(10, 30)),
+    Task("Quiet feeding", 15, Priority.MEDIUM, "food", cat, fixed_start=time(9, 0)),
     Task("Walk", 30, Priority.MEDIUM, "exercise", dog, fixed_start=time(9, 0)),
     Task("Breakfast", 20, Priority.HIGH, "food", dog, fixed_start=time(8, 0)),
 ]
@@ -25,6 +26,10 @@ for task in scheduler.sort_by_time():
 print("Nina Pending Tasks")
 for task in scheduler.filter_tasks(status="pending", pet_name="Nina"):
     print(f"- {task.title} ({task.status})")
+
+print("Schedule Warnings")
+for warning in scheduler.conflict_warnings():
+    print(f"- {warning}")
 
 plan = scheduler.build_daily_plan()
 

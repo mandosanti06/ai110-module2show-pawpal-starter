@@ -249,6 +249,22 @@ class Scheduler:
             self.tasks.append(next_task)
         return next_task
 
+    def conflict_warnings(self, tasks: list[Task] | None = None) -> list[str]:
+        """Return lightweight warnings for tasks scheduled at the same time."""
+        by_time: dict[str, list[Task]] = {}
+        for task in tasks or self.tasks:
+            if task.fixed_start is None:
+                continue
+            by_time.setdefault(task.time, []).append(task)
+
+        warnings = []
+        for start, matches in sorted(by_time.items()):
+            if len(matches) < 2:
+                continue
+            names = ", ".join(f"{task.pet.name} {task.title}" for task in matches)
+            warnings.append(f"Warning: {start} has overlapping tasks: {names}")
+        return warnings
+
     def tasks_for_day(self) -> list[Task]:
         """Return incomplete owner tasks whose recurrence applies today."""
         tasks = []
@@ -451,6 +467,9 @@ if __name__ == "__main__":
     assert weekly_next.due_date == day + timedelta(days=7)
 
     scheduler = Scheduler(owner, [walk, meds, brush, ignored, conflict, fixed_conflict, too_long, done], 80, day)
+    same_time = Task("Pulse", 10, Priority.MEDIUM, "health", dog, fixed_start=time(9, 30))
+    warnings = scheduler.conflict_warnings([meds, same_time])
+    assert warnings and "09:30" in warnings[0]
     plan = scheduler.build_daily_plan()
     assert [item.task.title for item in plan.items] == ["Give meds", "Breakfast", "Brush"]
     assert [item.start_time for item in plan.items] == [time(9, 30), time(9, 45), time(10, 30)]
