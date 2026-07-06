@@ -3,6 +3,33 @@ from datetime import date
 import streamlit as st
 import pawpal_system
 
+
+def task_rows(tasks):
+    return [
+        {
+            "Time": "Flexible" if task.fixed_start is None else task.time,
+            "Pet": task.pet.name,
+            "Task": task.title,
+            "Minutes": task.duration_minutes,
+            "Priority": task.priority.name.title(),
+            "Status": task.status.title(),
+        }
+        for task in tasks
+    ]
+
+
+def schedule_rows(items):
+    return [
+        {
+            "Time": f"{item.start_time.strftime('%H:%M')}-{item.end_time.strftime('%H:%M')}",
+            "Pet": item.task.pet.name,
+            "Task": item.task.title,
+            "Why scheduled": item.rationale,
+        }
+        for item in items
+    ]
+
+
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 
 st.title("🐾 PawPal+")
@@ -82,18 +109,27 @@ if st.button("Add task"):
     st.session_state.tasks.append(task)
 
 if st.session_state.tasks:
-    st.write("Current tasks:")
-    st.table(
-        [
-            {
-                "pet": task.pet.name,
-                "title": task.title,
-                "duration_minutes": task.duration_minutes,
-                "priority": task.priority.name.lower(),
-            }
-            for task in st.session_state.tasks
-        ]
+    preview_scheduler = pawpal_system.Scheduler(
+        st.session_state.owner,
+        st.session_state.tasks,
+        available_minutes=480,
+        day=date.today(),
     )
+    pending_tasks = preview_scheduler.filter_tasks(
+        status="pending",
+        pet_name=st.session_state.pet.name,
+    )
+    sorted_tasks = preview_scheduler.sort_by_time(pending_tasks)
+    warnings = preview_scheduler.conflict_warnings(sorted_tasks)
+
+    st.success(f"{len(sorted_tasks)} pending task(s) for {st.session_state.pet.name}, sorted by time.")
+    st.table(task_rows(sorted_tasks))
+
+    if warnings:
+        for warning in warnings:
+            st.warning(warning)
+    else:
+        st.success("No fixed-time conflicts found.")
 else:
     st.info("No tasks yet. Add one above.")
 
@@ -113,14 +149,23 @@ if st.button("Generate schedule"):
 
     st.markdown("### Today's Schedule")
     if plan.items:
-        for item in plan.items:
-            st.write(f"- {item.task.pet.name}: {item.describe()}")
+        st.success(f"Scheduled {len(plan.items)} task(s).")
+        st.table(schedule_rows(plan.items))
     else:
         st.info("No scheduled tasks.")
 
     if plan.unscheduled:
         st.markdown("### Unscheduled")
-        for item in plan.unscheduled:
-            st.write(f"- {item.task.title}: {item.reason}")
+        st.warning(f"{len(plan.unscheduled)} task(s) could not be scheduled.")
+        st.table(
+            [
+                {
+                    "Pet": item.task.pet.name,
+                    "Task": item.task.title,
+                    "Reason": item.reason,
+                }
+                for item in plan.unscheduled
+            ]
+        )
 
     st.caption(scheduler.explain_plan(plan))
