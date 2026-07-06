@@ -193,6 +193,19 @@ class Scheduler:
         """Return tasks sorted by their HH:MM time string."""
         return sorted(tasks or self.tasks, key=lambda task: task.time)
 
+    def filter_tasks(
+        self,
+        status: str | None = None,
+        pet_name: str | None = None,
+    ) -> list[Task]:
+        """Return tasks matching optional completion status and pet name."""
+        return [
+            task
+            for task in self.tasks
+            if (status is None or task.status == status)
+            and (pet_name is None or task.pet.name == pet_name)
+        ]
+
     def prioritize_tasks(self) -> list[Task]:
         """Return schedulable tasks ordered by scheduling priority."""
         return sorted(

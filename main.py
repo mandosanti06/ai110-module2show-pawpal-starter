@@ -22,6 +22,10 @@ print("Tasks Sorted by Time")
 for task in scheduler.sort_by_time():
     print(f"- {task.time}: {task.pet.name} {task.title}")
 
+print("Nina Pending Tasks")
+for task in scheduler.filter_tasks(status="pending", pet_name="Nina"):
+    print(f"- {task.title} ({task.status})")
+
 plan = scheduler.build_daily_plan()
 
 print("Today's Schedule")
