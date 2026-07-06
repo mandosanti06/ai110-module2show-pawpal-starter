@@ -242,9 +242,24 @@ class Scheduler:
         has_other_category = any(other.category != task.category for other in self.tasks_for_day())
         return has_other_category and category_minutes + task.duration_minutes >= plan.available_minutes
 
-    def task_sort_key(self, task: Task) -> tuple[bool, int, str, int]:
-        """Anchored first, then priority, deadline, then shorter duration."""
-        return (not task.is_anchored(), -task.priority, task.deadline_time, task.duration_minutes)
+    def preference_score(self, task: Task) -> int:
+        """Score tasks that match owner preference words."""
+        text = f"{task.title} {task.category} {task.pet.notes}".lower()
+        return sum(
+            token.rstrip("s") in text
+            for preference in self.owner.preferences
+            for token in preference.lower().split()
+        )
+
+    def task_sort_key(self, task: Task) -> tuple[bool, int, str, int, int]:
+        """Anchored first, then priority, deadline, preference, duration."""
+        return (
+            not task.is_anchored(),
+            -task.priority,
+            task.deadline_time,
+            -self.preference_score(task),
+            task.duration_minutes,
+        )
 
     def prioritize_tasks(self) -> list[Task]:
         """Return schedulable tasks ordered by scheduling priority."""
