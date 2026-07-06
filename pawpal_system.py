@@ -194,6 +194,7 @@ class Scheduler:
     tasks: list[Task]
     available_minutes: int
     day: date
+    max_minutes_per_pet: int | None = None
 
     def sort_by_time(self, tasks: list[Task] | None = None) -> list[Task]:
         """Return tasks sorted by their HH:MM time string."""
@@ -248,6 +249,15 @@ class Scheduler:
         has_other_category = any(other.category != task.category for other in self.tasks_for_day())
         return has_other_category and category_minutes + task.duration_minutes >= plan.available_minutes
 
+    def exceeds_pet_minutes(self, task: Task, plan: DailyPlan) -> bool:
+        """Return whether this task would exceed the pet's daily limit."""
+        if self.max_minutes_per_pet is None:
+            return False
+        pet_minutes = sum(
+            item.task.duration_minutes for item in plan.items if item.task.pet == task.pet
+        )
+        return pet_minutes + task.duration_minutes > self.max_minutes_per_pet
+
     def preference_score(self, task: Task) -> int:
         """Score tasks that match owner preference words."""
         text = f"{task.title} {task.category} {task.pet.notes}".lower()
@@ -286,6 +296,10 @@ class Scheduler:
 
             if self.would_monopolize_category(task, plan):
                 plan.add_unscheduled(task, "category would use all available time")
+                continue
+
+            if self.exceeds_pet_minutes(task, plan):
+                plan.add_unscheduled(task, "pet daily limit reached")
                 continue
 
             start = (
