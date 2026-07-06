@@ -113,6 +113,11 @@ class Task:
         """True if the task must start at `fixed_start`."""
         return self.fixed_start is not None
 
+    @property
+    def time(self) -> str:
+        """Return the task's sortable HH:MM time string."""
+        return self.fixed_start.strftime("%H:%M") if self.fixed_start else "99:99"
+
 @dataclass
 class ScheduleItem:
     task: Task
@@ -183,6 +188,10 @@ class Scheduler:
     tasks: list[Task]
     available_minutes: int
     day: date
+
+    def sort_by_time(self, tasks: list[Task] | None = None) -> list[Task]:
+        """Return tasks sorted by their HH:MM time string."""
+        return sorted(tasks or self.tasks, key=lambda task: task.time)
 
     def prioritize_tasks(self) -> list[Task]:
         """Return schedulable tasks ordered by scheduling priority."""

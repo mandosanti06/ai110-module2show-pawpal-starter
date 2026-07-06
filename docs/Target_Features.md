@@ -2,7 +2,7 @@
 
 ## Core Scheduling Features
 
-- [x] Sorting tasks by time
+- [X] Sorting tasks by time
 - [ ] Filtering by pet/status
 - [ ] Handling recurring tasks
 - [ ] Basic conflict detection
