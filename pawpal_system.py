@@ -214,11 +214,17 @@ class Scheduler:
 
     def tasks_for_day(self) -> list[Task]:
         """Return incomplete owner tasks whose recurrence applies today."""
-        return [
-            task
-            for task in self.tasks
-            if task.pet in self.owner.pets and task.applies_on(self.day) and not task.completed
-        ]
+        tasks = []
+        seen = set()
+        for task in self.tasks:
+            if task.pet not in self.owner.pets or not task.applies_on(self.day) or task.completed:
+                continue
+            key = (task.pet.name, task.title, task.category, task.recurrence)
+            if key in seen:
+                continue
+            seen.add(key)
+            tasks.append(task)
+        return tasks
 
     def has_conflict(self, item: ScheduleItem, items: list[ScheduleItem]) -> bool:
         """Return whether an item overlaps any scheduled item."""

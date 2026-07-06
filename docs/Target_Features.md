@@ -15,7 +15,7 @@
 - [x] Add task deadlines, then sort urgent tasks by earliest deadline after priority.
 - [x] Balance task categories so one category does not use all available time.
 - [x] Score tasks with owner preferences, such as boosting morning walks.
-- [ ] Detect duplicate daily tasks for the same pet, title, and category.
+- [x] Detect duplicate daily tasks for the same pet, title, and category.
 - [ ] Try the next open slot for flexible tasks before marking them unscheduled.
 - [ ] Add a maximum daily minutes limit per pet.
 - [ ] Record why each scheduled task was selected.
