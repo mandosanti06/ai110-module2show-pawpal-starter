@@ -234,6 +234,14 @@ class Scheduler:
                 return True
         return False
 
+    def would_monopolize_category(self, task: Task, plan: DailyPlan) -> bool:
+        """Avoid spending the whole day on one category when others apply."""
+        category_minutes = sum(
+            item.task.duration_minutes for item in plan.items if item.task.category == task.category
+        )
+        has_other_category = any(other.category != task.category for other in self.tasks_for_day())
+        return has_other_category and category_minutes + task.duration_minutes >= plan.available_minutes
+
     def task_sort_key(self, task: Task) -> tuple[bool, int, str, int]:
         """Anchored first, then priority, deadline, then shorter duration."""
         return (not task.is_anchored(), -task.priority, task.deadline_time, task.duration_minutes)
@@ -253,6 +261,10 @@ class Scheduler:
         for task in self.prioritize_tasks():
             if task.duration_minutes > plan.remaining_minutes():
                 plan.add_unscheduled(task, "not enough available minutes")
+                continue
+
+            if self.would_monopolize_category(task, plan):
+                plan.add_unscheduled(task, "category would use all available time")
                 continue
 
             start = (
