@@ -251,6 +251,7 @@ class Scheduler:
             if not task.is_anchored():
                 next_start = end
 
+        plan.items.sort(key=lambda item: item.start_time)
         return plan
 
     def explain_plan(self, plan: DailyPlan) -> str:

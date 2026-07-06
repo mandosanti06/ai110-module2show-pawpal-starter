@@ -9,7 +9,7 @@
 
 ## Small Logic Improvements
 
-- [ ] Sort the final schedule by `start_time` before display.
+- [x] Sort the final schedule by `start_time` before display.
 - [ ] Use shortest-task-first as a tiebreaker for flexible low-priority tasks.
 - [ ] Add pet-specific spacing rules, such as avoiding food immediately before a walk.
 - [ ] Add task deadlines, then sort urgent tasks by earliest deadline after priority.
