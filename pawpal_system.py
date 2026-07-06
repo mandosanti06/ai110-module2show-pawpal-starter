@@ -218,11 +218,15 @@ class Scheduler:
         """Return whether an item overlaps any scheduled item."""
         return any(item.overlaps(existing) for existing in items)
 
+    def task_sort_key(self, task: Task) -> tuple[bool, int, int]:
+        """Anchored first, then higher priority, then shorter duration."""
+        return (not task.is_anchored(), -task.priority, task.duration_minutes)
+
     def prioritize_tasks(self) -> list[Task]:
         """Return schedulable tasks ordered by scheduling priority."""
         return sorted(
             self.tasks_for_day(),
-            key=lambda task: (not task.is_anchored(), -task.priority, task.duration_minutes),
+            key=self.task_sort_key,
         )
 
     def build_daily_plan(self) -> DailyPlan:
