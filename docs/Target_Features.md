@@ -5,7 +5,7 @@
 - [X] Sorting tasks by time
 - [x] Filtering by pet/status
 - [x] Handling recurring tasks
-- [ ] Basic conflict detection
+- [x] Basic conflict detection
 
 ## Small Logic Improvements
 

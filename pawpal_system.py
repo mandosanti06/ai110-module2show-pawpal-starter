@@ -214,6 +214,10 @@ class Scheduler:
             if task.pet in self.owner.pets and task.applies_on(self.day) and not task.completed
         ]
 
+    def has_conflict(self, item: ScheduleItem, items: list[ScheduleItem]) -> bool:
+        """Return whether an item overlaps any scheduled item."""
+        return any(item.overlaps(existing) for existing in items)
+
     def prioritize_tasks(self) -> list[Task]:
         """Return schedulable tasks ordered by scheduling priority."""
         return sorted(
@@ -239,7 +243,7 @@ class Scheduler:
             end = _add_minutes(start, task.duration_minutes)
             item = ScheduleItem(task, start, end, "fixed start" if task.is_anchored() else "next available")
 
-            if any(item.overlaps(existing) for existing in plan.items):
+            if self.has_conflict(item, plan.items):
                 plan.add_unscheduled(task, "conflicts with scheduled task")
                 continue
 
