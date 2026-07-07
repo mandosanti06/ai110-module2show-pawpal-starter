@@ -1,66 +1,350 @@
 from datetime import date
+from pathlib import Path
 
 import streamlit as st
 import pawpal_system
 
-st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
+DATA_FILE = Path("data.json")
 
-st.title("🐾 PawPal+")
 
+def apply_design() -> None:
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono&family=Work+Sans:wght@400;600;700&display=swap');
+
+        :root {
+            --black: #000000;
+            --white: #FFFFFF;
+            --blue: #0000FF;
+            --green: #008000;
+            --orange: #FFA500;
+            --red: #FF0000;
+            --sunken: #F0F0F0;
+            --disabled: #CCCCCC;
+        }
+
+        .stApp {
+            background: var(--white);
+            color: var(--black);
+        }
+
+        header[data-testid="stHeader"],
+        div[data-testid="stToolbar"] {
+            display: none;
+        }
+
+        .block-container {
+            max-width: 920px;
+            padding: 40px 32px 80px;
+        }
+
+        h1, h2, h3, h4 {
+            color: var(--black);
+            font-family: "Archivo Black", Impact, sans-serif;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            border-bottom: 5px solid var(--black);
+            font-size: 64px;
+            line-height: 1;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+        }
+
+        h2 {
+            font-size: 48px;
+            line-height: 1.05;
+        }
+
+        h3 {
+            font-size: 32px;
+            line-height: 1.1;
+            margin-top: 0;
+        }
+
+        p, li, label, .stMarkdown, .stCaption, div[data-testid="stText"] {
+            font-family: "Work Sans", Arial, sans-serif;
+            letter-spacing: 0;
+        }
+
+        p, li {
+            color: var(--black);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .app-overline {
+            background: var(--black);
+            color: var(--white);
+            display: inline-block;
+            font-family: "Space Mono", monospace;
+            font-size: 12px;
+            letter-spacing: .1em;
+            margin-bottom: 24px;
+            padding: 4px 12px;
+            text-transform: uppercase;
+        }
+
+        .app-lede {
+            border: 3px solid var(--black);
+            color: var(--black);
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            padding: 24px;
+        }
+
+        .section-note {
+            color: var(--black);
+            font-family: "Space Mono", monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-top: -8px;
+            margin-bottom: 24px;
+        }
+
+        hr {
+            background: var(--black) !important;
+            border: 0 !important;
+            height: 5px !important;
+            margin: 40px 0 !important;
+        }
+
+        div[data-testid="stDivider"] {
+            background: var(--black) !important;
+            height: 5px !important;
+            margin: 40px 0 !important;
+        }
+
+        div[data-testid="stDivider"] > div {
+            display: none;
+        }
+
+        div[data-testid="stMarkdownContainer"] hr {
+            background: var(--black) !important;
+            border: 0 !important;
+            height: 5px !important;
+        }
+
+        a {
+            color: var(--blue);
+        }
+
+        div[data-testid="stTextInput"] input,
+        div[data-testid="stNumberInput"] input,
+        div[data-baseweb="select"] > div {
+            background: var(--sunken);
+            border: 3px solid var(--black);
+            border-radius: 0;
+            box-shadow: none;
+            color: var(--black);
+            font-family: "Space Mono", monospace;
+            font-size: 15px;
+            min-height: 44px;
+        }
+
+        div[data-testid="stTextInput"] input:focus,
+        div[data-testid="stNumberInput"] input:focus {
+            border: 5px solid var(--black);
+            box-shadow: none;
+            outline: none;
+        }
+
+        div[data-testid="stTextInput"] label,
+        div[data-testid="stNumberInput"] label,
+        div[data-testid="stSelectbox"] label {
+            color: var(--black);
+            font-family: "Archivo Black", Impact, sans-serif;
+            font-size: 14px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        .stButton > button {
+            background: var(--black);
+            border: 3px solid var(--black);
+            border-radius: 0;
+            box-shadow: none;
+            color: var(--white);
+            font-family: "Work Sans", Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: .12em;
+            min-height: 44px;
+            padding: 10px 24px;
+            text-transform: uppercase;
+        }
+
+        .stButton > button:hover {
+            background: var(--white);
+            border-color: var(--black);
+            color: var(--black);
+        }
+
+        .stButton > button:active {
+            background: var(--black);
+            border: 5px solid var(--black);
+            color: var(--white);
+        }
+
+        .stButton > button p {
+            color: inherit;
+            font-size: inherit;
+            font-weight: inherit;
+            letter-spacing: inherit;
+            line-height: 1;
+            margin: 0;
+            text-transform: inherit;
+        }
+
+        div[data-testid="stNumberInput"] button {
+            border-left: 3px solid var(--black);
+            border-radius: 0;
+            color: var(--black);
+        }
+
+        div[data-testid="stAlert"] {
+            background: var(--white) !important;
+            border-radius: 0;
+            border: 3px solid var(--black);
+            box-shadow: none;
+            color: var(--black);
+            font-family: "Space Mono", monospace;
+        }
+
+        div[data-testid="stAlert"] * {
+            color: var(--black) !important;
+        }
+
+        div[data-testid="stAlert"][kind="success"] {
+            border-color: var(--green);
+        }
+
+        div[data-testid="stAlert"][kind="warning"] {
+            border-color: var(--orange);
+        }
+
+        div[data-testid="stAlert"][kind="error"] {
+            border-color: var(--red);
+        }
+
+        div[data-testid="stTable"] {
+            border: 3px solid var(--black);
+            border-radius: 0;
+        }
+
+        div[data-testid="stTable"] table {
+            border-collapse: collapse;
+            font-family: "Space Mono", monospace;
+        }
+
+        div[data-testid="stTable"] th {
+            background: var(--black);
+            color: var(--white);
+            font-weight: 400;
+            text-transform: uppercase;
+        }
+
+        div[data-testid="stTable"] th * {
+            color: var(--white) !important;
+        }
+
+        div[data-testid="stTable"] th,
+        div[data-testid="stTable"] td {
+            border: 3px solid var(--black);
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def section_intro(title: str, note: str) -> None:
+    st.markdown(f"### {title}")
+    st.markdown(f'<p class="section-note">{note}</p>', unsafe_allow_html=True)
+
+
+def task_rows(tasks):
+    return [
+        {
+            "Time": "Flexible" if task.fixed_start is None else task.time,
+            "Pet": task.pet.name,
+            "Task": task.title,
+            "Minutes": task.duration_minutes,
+            "Priority": task.priority.name.title(),
+            "Status": task.status.title(),
+        }
+        for task in tasks
+    ]
+
+
+def schedule_rows(items):
+    return [
+        {
+            "Time": f"{item.start_time.strftime('%H:%M')}-{item.end_time.strftime('%H:%M')}",
+            "Pet": item.task.pet.name,
+            "Task": item.task.title,
+            "Why scheduled": item.rationale,
+        }
+        for item in items
+    ]
+
+
+st.set_page_config(page_title="PawPal+", page_icon="P", layout="centered")
+apply_design()
+
+st.markdown('<div class="app-overline">Pet care planning assistant</div>', unsafe_allow_html=True)
+st.title("PawPal+")
 st.markdown(
     """
-Welcome to the PawPal+ starter app.
-
-This file is intentionally thin. It gives you a working Streamlit app so you can start quickly,
-but **it does not implement the project logic**. Your job is to design the system and build it.
-
-Use this app as your interactive demo once your backend classes/functions exist.
-"""
+    <p class="app-lede">
+    Plan a calm day of pet care from a short list of tasks. PawPal+ sorts pending work,
+    flags fixed-time conflicts, and explains what made it onto today's schedule.
+    </p>
+    """,
+    unsafe_allow_html=True,
 )
-
-with st.expander("Scenario", expanded=True):
-    st.markdown(
-        """
-**PawPal+** is a pet care planning assistant. It helps a pet owner plan care tasks
-for their pet(s) based on constraints like time, priority, and preferences.
-
-You will design and implement the scheduling logic and connect it to this Streamlit UI.
-"""
-    )
-
-with st.expander("What you need to build", expanded=True):
-    st.markdown(
-        """
-At minimum, your system should:
-- Represent pet care tasks (what needs to happen, how long it takes, priority)
-- Represent the pet and the owner (basic info and preferences)
-- Build a plan/schedule for a day that chooses and orders tasks based on constraints
-- Explain the plan (why each task was chosen and when it happens)
-"""
-    )
 
 st.divider()
 
-st.subheader("Quick Demo Inputs (UI only)")
-owner_name = st.text_input("Owner name", value="Jordan")
+section_intro("Care Profile", "Start with the owner and pet this schedule is for.")
 if "owner" not in st.session_state:
-    st.session_state.owner = pawpal_system.Owner(owner_name)
-else:
-    st.session_state.owner.update_name(owner_name)
+    if DATA_FILE.exists():
+        st.session_state.owner = pawpal_system.Owner.load_from_json(DATA_FILE)
+    else:
+        st.session_state.owner = pawpal_system.Owner("Jordan")
 
-pet_name = st.text_input("Pet name", value="Mochi")
-species = st.selectbox("Species", ["dog", "cat", "other"])
 if "pet" not in st.session_state:
-    st.session_state.pet = pawpal_system.Pet(pet_name, species, "", "")
-    st.session_state.owner.add_pet(st.session_state.pet)
-else:
-    st.session_state.pet.update_profile(pet_name, species, "", "")
+    if st.session_state.owner.pets:
+        st.session_state.pet = st.session_state.owner.pets[0]
+    else:
+        st.session_state.pet = pawpal_system.Pet("Mochi", "dog", "", "")
+        st.session_state.owner.add_pet(st.session_state.pet)
 
-st.markdown("### Tasks")
-st.caption("Add a few tasks. These feed into your scheduler.")
+owner_name = st.text_input("Owner name", value=st.session_state.owner.name)
+st.session_state.owner.update_name(owner_name)
+
+pet_name = st.text_input("Pet name", value=st.session_state.pet.name)
+species_options = ["dog", "cat", "other"]
+species = st.selectbox(
+    "Species",
+    species_options,
+    index=species_options.index(st.session_state.pet.species)
+    if st.session_state.pet.species in species_options
+    else 2,
+)
+st.session_state.pet.update_profile(pet_name, species, st.session_state.pet.breed, st.session_state.pet.notes)
+st.session_state.owner.save_to_json(DATA_FILE)
+
+st.divider()
+
+section_intro("Tasks", "Add care tasks, then review the scheduler's sorted pending list.")
 
 if "tasks" not in st.session_state:
-    st.session_state.tasks = []
+    st.session_state.tasks = st.session_state.pet.tasks
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -79,7 +363,7 @@ if st.button("Add task"):
         st.session_state.pet,
     )
     st.session_state.pet.add_task(task)
-    st.session_state.tasks.append(task)
+    st.session_state.owner.save_to_json(DATA_FILE)
 
 if st.session_state.tasks:
     st.write("Current tasks:")
@@ -99,7 +383,7 @@ else:
 
 st.divider()
 
-st.subheader("Build Schedule")
+section_intro("Build Schedule", "Choose the time available today and generate a schedule with rationale.")
 available_minutes = st.number_input("Available minutes today", min_value=1, max_value=480, value=120)
 
 if st.button("Generate schedule"):
@@ -113,8 +397,7 @@ if st.button("Generate schedule"):
 
     st.markdown("### Today's Schedule")
     if plan.items:
-        for item in plan.items:
-            st.write(f"- {item.task.pet.name}: {item.describe()}")
+        st.table(schedule_rows(plan.items))
     else:
         st.info("No scheduled tasks.")
 

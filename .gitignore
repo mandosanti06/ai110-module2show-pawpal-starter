@@ -5,3 +5,4 @@ __pycache__/
 .DS_Store
 TODO.md
 .claude/settings.local.json
+.pycache/

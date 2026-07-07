@@ -61,12 +61,18 @@ changed both `pawpal_system.py` and `diagrams/uml.mmd`:
 **a. How you used AI**
 
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
+  
+  - ChatGPT and Codex (GPT 5.5 Mid)
+
 - What kinds of prompts or questions were most helpful?
+  - Check that the code you wrote is maintainable and easy to understand.
 
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
+  - Feature recommendations where kind of bad and creative decisions.
 - How did you evaluate or verify what the AI suggested?
+  - By testing and by reading the code it wrote.
 
 ---
 
@@ -74,13 +80,33 @@ changed both `pawpal_system.py` and `diagrams/uml.mmd`:
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+- The git history shows testing was planned first in `47f8fec` with core
+  behavior and edge-case notes, then expanded in `2f8f7dc` / `af275d2` into
+  automated tests for the scheduler.
+- Those tests covered task completion, adding tasks to a pet, chronological
+  sorting, daily recurrence, duplicate fixed-time conflict warnings, empty
+  schedules, ignoring tasks for pets outside the owner, unscheduling exact
+  fixed-time conflicts, allowing adjacent time ranges, excluding weekly tasks
+  on the wrong weekday, due-date filtering, food/exercise spacing, and
+  over-budget tasks.
+- These tests mattered because the scheduler is the part most likely to fail
+  silently. If sorting, recurrence, conflict handling, or unscheduled reasons
+  are wrong, the UI can still look correct while giving the pet owner a bad
+  plan.
+- For the final UI pass, I also verified the Streamlit app with screenshots:
+  main input form, task preview, generated schedule, and mobile layout. The
+  screenshot loop caught UI issues with thin dividers, hidden button text, and
+  pale alert text before the README images were updated.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+- I am reasonably confident in the scheduler's core behavior because the
+  history includes targeted tests for the main scheduling rules and edge cases,
+  and the current verification still passes the available pytest suite.
+- I would test more combinations next: multiple pets with competing high
+  priority tasks, deadlines combined with fixed starts, duplicate flexible
+  tasks, max-minutes-per-pet with recurring tasks, and UI flows for adding
+  fixed-start tasks instead of only using the backend and CLI examples.
 
 ---
 
@@ -89,11 +115,15 @@ changed both `pawpal_system.py` and `diagrams/uml.mmd`:
 **a. What went well**
 
 - What part of this project are you most satisfied with?
+  - The lessons learned I tried to read almost everything the AI outputed to understand everything.
 
 **b. What you would improve**
 
 - If you had another iteration, what would you improve or redesign?
+  - I would have started this project before this project took me longer than I thought.
 
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
+
+  - Sometimes we let AI run wild and thats not right we should know what the AI agents are doing in our code.

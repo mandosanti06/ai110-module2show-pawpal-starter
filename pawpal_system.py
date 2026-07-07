@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from enum import Enum, IntEnum
+from pathlib import Path
+from typing import Any
 
 ANCHOR_DATE = date(2000, 1, 1)
 FOOD_EXERCISE_SPACING_MINUTES = 30
@@ -41,6 +44,30 @@ class Owner:
         """Attach a pet to this owner."""
         self.pets.append(pet)
 
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-safe representation of this owner and its pets."""
+        return {
+            "name": self.name,
+            "preferences": self.preferences,
+            "pets": [pet.to_dict() for pet in self.pets],
+        }
+
+    def save_to_json(self, path: str | Path = "data.json") -> None:
+        """Persist this owner, pets, and tasks to a JSON file."""
+        Path(path).write_text(json.dumps(self.to_dict(), indent=2), encoding="utf-8")
+
+    @classmethod
+    def load_from_json(cls, path: str | Path = "data.json") -> Owner:
+        """Load an owner, pets, and tasks from a JSON file."""
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        owner = cls(data["name"], list(data.get("preferences", [])))
+        for pet_data in data.get("pets", []):
+            pet = Pet.from_dict(pet_data)
+            owner.add_pet(pet)
+            for task_data in pet_data.get("tasks", []):
+                pet.add_task(Task.from_dict(task_data, pet))
+        return owner
+
 @dataclass
 class Pet:
     name: str
@@ -59,6 +86,26 @@ class Pet:
     def add_task(self, task: Task) -> None:
         """Attach a task to this pet."""
         self.tasks.append(task)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-safe representation of this pet and its tasks."""
+        return {
+            "name": self.name,
+            "species": self.species,
+            "breed": self.breed,
+            "notes": self.notes,
+            "tasks": [task.to_dict() for task in self.tasks],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Pet:
+        """Create a pet from saved JSON data."""
+        return cls(
+            data["name"],
+            data["species"],
+            data.get("breed", ""),
+            data.get("notes", ""),
+        )
 
 
 @dataclass
@@ -159,6 +206,38 @@ class Task:
     def deadline_time(self) -> str:
         """Return the task's sortable deadline string."""
         return self.deadline.strftime("%H:%M") if self.deadline else "99:99"
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-safe representation of this task."""
+        return {
+            "title": self.title,
+            "duration_minutes": self.duration_minutes,
+            "priority": self.priority.name,
+            "category": self.category,
+            "recurrence": self.recurrence.value,
+            "weekday": self.weekday,
+            "fixed_start": _time_to_json(self.fixed_start),
+            "deadline": _time_to_json(self.deadline),
+            "due_date": self.due_date.isoformat() if self.due_date else None,
+            "completed": self.completed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any], pet: Pet) -> Task:
+        """Create a task from saved JSON data and reattach it to a pet."""
+        return cls(
+            data["title"],
+            int(data["duration_minutes"]),
+            Priority[data.get("priority", "MEDIUM")],
+            data.get("category", "care"),
+            pet,
+            Recurrence(data.get("recurrence", Recurrence.ONCE.value)),
+            data.get("weekday"),
+            _time_from_json(data.get("fixed_start")),
+            _time_from_json(data.get("deadline")),
+            date.fromisoformat(data["due_date"]) if data.get("due_date") else None,
+            bool(data.get("completed", False)),
+        )
 
 @dataclass
 class ScheduleItem:
@@ -344,18 +423,19 @@ class Scheduler:
             for token in preference.lower().split()
         ]
 
-    def task_sort_key(self, task: Task) -> tuple[bool, int, str, int, int]:
+    def task_sort_key(self, task: Task) -> tuple[int, str, bool, str, int, int]:
         """Return the scheduler's priority tuple for one task."""
         return (
-            not task.is_anchored(),
             -task.priority,
+            task.time,
+            not task.is_anchored(),
             task.deadline_time,
             -self.preference_score(task),
             task.duration_minutes,
         )
 
     def prioritize_tasks(self) -> list[Task]:
-        """Return today's tasks ordered by anchor, priority, deadline, preference, and duration."""
+        """Return today's tasks ordered by priority, time, deadline, preference, and duration."""
         return sorted(
             self.tasks_for_day(),
             key=self.task_sort_key,
@@ -442,6 +522,16 @@ def _minutes_between(start: time, end: time) -> int:
     """Return whole minutes from `start` to `end`."""
     delta = datetime.combine(ANCHOR_DATE, end) - datetime.combine(ANCHOR_DATE, start)
     return int(delta.total_seconds() // 60)
+
+
+def _time_to_json(value: time | None) -> str | None:
+    """Return a JSON-safe time string."""
+    return value.strftime("%H:%M") if value else None
+
+
+def _time_from_json(value: str | None) -> time | None:
+    """Parse a saved HH:MM time string."""
+    return time.fromisoformat(value) if value else None
 
 
 if __name__ == "__main__":
